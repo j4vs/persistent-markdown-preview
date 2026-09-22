@@ -1,0 +1,10 @@
+**
+!package.json
+!README.md
+!LICENSE
+!THIRD_PARTY_NOTICES.txt
+!CHANGELOG.md
+!dist/extension.js
+!media/preview.js
+!media/preview.css
+!media/mermaid.js

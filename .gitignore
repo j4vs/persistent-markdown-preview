@@ -1,0 +1,8 @@
+node_modules/
+.codex/
+media/mermaid.js
+dist/
+*.vsix
+test-results/
+.npm-cache/
+.test-host/

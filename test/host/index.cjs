@@ -1,0 +1,34 @@
+const assert = require('node:assert/strict');
+const vscode = require('vscode');
+
+exports.run = async () => {
+  const extension = vscode.extensions.getExtension('smartsys-mx.persistent-markdown-preview');
+  assert.ok(extension, 'Extension is discoverable');
+  await extension.activate();
+  await vscode.commands.executeCommand('workbench.action.closeAllEditors');
+  const a = await vscode.workspace.openTextDocument({ language: 'markdown', content: '# A\n\nOriginal content' });
+  await vscode.window.showTextDocument(a);
+  const sourceGroup = vscode.window.tabGroups.activeTabGroup;
+  const initialGroupCount = vscode.window.tabGroups.all.length;
+  await vscode.commands.executeCommand('persistentMarkdownPreview.open');
+  assert.equal(vscode.window.tabGroups.activeTabGroup, sourceGroup, 'Preview opens in the source editor group');
+  assert.equal(vscode.window.tabGroups.all.length, initialGroupCount, 'Preview must not split the editor');
+  await vscode.window.showTextDocument(a);
+  await vscode.commands.executeCommand('persistentMarkdownPreview.open');
+  const b = await vscode.workspace.openTextDocument({ language: 'markdown', content: '# B' });
+  await vscode.window.showTextDocument(b);
+  await vscode.commands.executeCommand('persistentMarkdownPreview.open');
+  await new Promise(resolve => setTimeout(resolve, 500));
+  const previews = () => vscode.window.tabGroups.all.flatMap(group => group.tabs).filter(tab => tab.input instanceof vscode.TabInputWebview);
+  assert.equal(previews().length, 3, 'Three simultaneous webviews');
+  assert.ok(previews().some(tab => tab.label.endsWith('(2)')));
+  await vscode.window.showTextDocument(a);
+  const edit = new vscode.WorkspaceEdit();
+  edit.insert(a.uri, new vscode.Position(1, 0), '\nChanged\n');
+  assert.equal(await vscode.workspace.applyEdit(edit), true);
+  await vscode.commands.executeCommand('persistentMarkdownPreview.reveal');
+  assert.equal(previews().length, 3, 'Reveal must not create a fourth panel');
+  await vscode.window.tabGroups.close(previews()[0]);
+  assert.equal(previews().length, 2);
+  console.log('Extension Host smoke test passed: activation, Untitled, multiple panels, edit, reveal and close.');
+};

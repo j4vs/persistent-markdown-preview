@@ -1,0 +1,83 @@
+const { test } = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const { chromium } = require('playwright');
+const esbuild = require('esbuild');
+
+test('Reading controls: nested folds, TOC navigation, exact Markdown copy and persistent state', async () => {
+  const result = await esbuild.build({ entryPoints: ['src/markdownRenderer.ts'], bundle: true, platform: 'node', format: 'cjs', write: false });
+  const mod = { exports: {} };
+  new Function('module', 'exports', 'require', result.outputFiles[0].text)(mod, mod.exports, require);
+  const table = '| Columna | Enlace |\n| :--- | ---: |\n| **Dato** | [Ver](https://example.com) |';
+  const markdown = '# Principal\n\nIntroducción\n\n## Sección A\n\nContenido A\n\n### Detalle\n\nTexto detalle\n\n' + table + '\n\n## Sección B\n\nContenido B';
+  const render = text => mod.exports.renderMarkdown(text, href => href);
+  const edge = 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe';
+  const browser = await chromium.launch({ executablePath: process.env.PREVIEW_TEST_BROWSER || (fs.existsSync(edge) ? edge : undefined), headless: true });
+  try {
+    const create = async (saved = {}) => {
+      const page = await browser.newPage({ viewport: { width: 1200, height: 950 } });
+      await page.setContent('<main id="content"></main>');
+      await page.addStyleTag({ path: 'media/preview.css' });
+      await page.evaluate(saved => {
+        window.saved = saved; window.messages = [];
+        window.acquireVsCodeApi = () => ({ getState: () => saved, setState: s => window.saved = s, postMessage: m => window.messages.push(m) });
+      }, saved);
+      await page.addScriptTag({ path: 'media/preview.js' });
+      return page;
+    };
+    const send = async (page, text = markdown) => {
+      await page.evaluate(html => window.dispatchEvent(new MessageEvent('message', { data: { type: 'render', html, state: {} } })), render(text));
+      await page.waitForTimeout(100);
+    };
+    const page = await create();
+    await send(page);
+    assert.equal(await page.evaluate(() => getComputedStyle(document.body).fontSize), '14px');
+    assert.equal(await page.locator('main').evaluate(el => el.getBoundingClientRect().width), 980);
+    assert.equal(await page.locator('.copy-table').evaluate(el => getComputedStyle(el).opacity), '0');
+    await page.locator('.table-heading thead').hover();
+    await page.locator('.copy-table').click();
+    const message = await page.evaluate(() => window.messages.find(m => m.type === 'copyTable'));
+    assert.equal(message.text, table);
+    await page.evaluate(requestId => window.dispatchEvent(new MessageEvent('message', { data: { type: 'copyResult', requestId, ok: true } })), message.requestId);
+    assert.match(await page.locator('.copy-table').getAttribute('aria-label'), /copiada/);
+    await page.waitForTimeout(2100);
+    assert.match(await page.locator('.copy-table').getAttribute('aria-label'), /Copiar tabla/);
+    await page.locator('#detalle .heading-toggle').click();
+    await page.locator('#sección-a .heading-toggle').click();
+    assert.equal(await page.locator('#detalle').isVisible(), false);
+    assert.equal(await page.locator('#sección-b').isVisible(), true);
+    await page.locator('.toc-toggle').click();
+    assert.equal(await page.locator('#preview-toc a').count(), 4);
+    const state = await page.evaluate(() => window.saved);
+    const restored = await create(state);
+    await send(restored);
+    assert.equal(await restored.locator('#detalle').isVisible(), false);
+    assert.equal(await restored.locator('#preview-toc').isVisible(), true);
+    await page.locator('#preview-toc a').filter({ hasText: 'Detalle' }).click();
+    assert.equal(await page.locator('#preview-toc').isVisible(), false);
+    assert.equal(await page.locator('#detalle').isVisible(), true);
+    assert.equal(await page.locator('#section-detalle').isVisible(), false, 'Child retains its own collapsed state');
+    await page.locator('#detalle .heading-toggle').click();
+    assert.equal(await page.locator('.table-data').isVisible(), true);
+    await send(page, markdown + '\n\nActualización');
+    assert.equal(await page.locator('.table-data').isVisible(), true);
+    assert.equal(await page.locator('#preview-toc').isVisible(), false);
+    await page.setViewportSize({ width: 1500, height: 950 });
+    await page.waitForFunction(() => document.body.classList.contains('toc-docked'));
+    assert.equal(await page.locator('#preview-toc').isVisible(), true);
+    assert.equal(await page.locator('.toc-toggle').isVisible(), false);
+    await page.locator('.toc-header button').click();
+    assert.equal(await page.locator('#preview-toc').isVisible(), false);
+    await page.locator('.toc-toggle').click();
+    assert.equal(await page.locator('#preview-toc').isVisible(), true);
+    await page.evaluate(() => window.dispatchEvent(new MessageEvent('message', { data: { type: 'appearance', fontSize: 18, textFontFamily: 'Arial', codeFontFamily: 'Consolas' } })));
+    assert.equal(await page.evaluate(() => getComputedStyle(document.body).fontSize), '18px');
+    assert.equal(await page.evaluate(() => getComputedStyle(document.body).fontFamily), 'Arial');
+    fs.mkdirSync('test-results', { recursive: true });
+    await page.screenshot({ path: 'test-results/reading-controls.png', fullPage: true });
+    await page.setViewportSize({ width: 420, height: 800 });
+    await page.waitForFunction(() => !document.body.classList.contains('toc-docked'));
+    await page.locator('.toc-toggle').click();
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+  } finally { await browser.close(); }
+});

@@ -1,0 +1,102 @@
+{
+  "name": "persistent-markdown-preview",
+  "displayName": "Persistent Markdown Preview",
+  "description": "Independent Markdown previews with persistent scroll, including unsaved documents.",
+  "version": "1.5.2",
+  "publisher": "smartsys-mx",
+  "author": { "name": "Smartsys", "url": "https://smartsys.mx/" },
+  "homepage": "https://smartsys.mx/",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onWebviewPanel:persistentMarkdownPreview"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "configuration": {
+      "title": "Persistent Markdown Preview",
+      "properties": {
+        "persistentMarkdownPreview.fontSize": {
+          "type": "number",
+          "default": 14,
+          "minimum": 8,
+          "maximum": 48,
+          "description": "Tamaño base del texto de la preview en píxeles."
+        },
+        "persistentMarkdownPreview.textFontFamily": {
+          "type": "string",
+          "default": "",
+          "description": "Tipografía del texto. Vacío utiliza la fuente de interfaz de VS Code. Ejemplo: Inter, sans-serif."
+        },
+        "persistentMarkdownPreview.codeFontFamily": {
+          "type": "string",
+          "default": "",
+          "description": "Tipografía del código inline y bloques. Vacío utiliza la fuente del editor de VS Code. Ejemplo: Cascadia Code, monospace."
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "persistentMarkdownPreview.open",
+        "title": "Open Preview",
+        "category": "Persistent Markdown Preview",
+        "icon": "$(open-preview)"
+      },
+      {
+        "command": "persistentMarkdownPreview.reveal",
+        "title": "Open or Reveal Preview",
+        "category": "Persistent Markdown Preview"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "persistentMarkdownPreview.open",
+        "key": "ctrl+shift+alt+v",
+        "mac": "cmd+shift+alt+v",
+        "when": "editorLangId == markdown && editorTextFocus"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "persistentMarkdownPreview.open",
+          "when": "editorLangId == markdown",
+          "group": "navigation"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "persistentMarkdownPreview.open",
+          "when": "editorLangId == markdown"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "compile": "tsc --noEmit && node esbuild.mjs",
+    "watch": "node esbuild.mjs --watch",
+    "vscode:prepublish": "npm run compile",
+    "package": "vsce package --no-dependencies --allow-missing-repository --out persistent-markdown-preview-1.5.2.vsix",
+    "test": "npm run compile && node --test test/*.test.cjs",
+    "test:host": "npm run compile && node test/run-host.cjs"
+  },
+  "dependencies": {
+    "highlight.js": "^11.12.0",
+    "markdown-it": "^14.1.0",
+    "mermaid": "^11.17.2"
+  },
+  "devDependencies": {
+    "@types/markdown-it": "^14.1.2",
+    "@types/node": "^22.0.0",
+    "@types/vscode": "1.95.0",
+    "@vscode/vsce": "^3.0.0",
+    "esbuild": "^0.25.0",
+    "playwright": "^1.51.0",
+    "typescript": "^5.7.0"
+  }
+}
