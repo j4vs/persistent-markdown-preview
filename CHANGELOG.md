@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.5.3
+
+- Rewrite the README for public users and move development instructions to CONTRIBUTING.md.
+- Link the public GitHub repository, project homepage and issue tracker from the extension metadata.
+
 ## 1.5.2
 
 - Set the publisher to `smartsys-mx` and company metadata to Smartsys.

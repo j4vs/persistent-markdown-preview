@@ -2,10 +2,12 @@
   "name": "persistent-markdown-preview",
   "displayName": "Persistent Markdown Preview",
   "description": "Independent Markdown previews with persistent scroll, including unsaved documents.",
-  "version": "1.5.2",
+  "version": "1.5.3",
   "publisher": "smartsys-mx",
   "author": { "name": "Smartsys", "url": "https://smartsys.mx/" },
-  "homepage": "https://smartsys.mx/",
+  "homepage": "https://github.com/j4vs/persistent-markdown-preview#readme",
+  "repository": { "type": "git", "url": "https://github.com/j4vs/persistent-markdown-preview.git" },
+  "bugs": { "url": "https://github.com/j4vs/persistent-markdown-preview/issues" },
   "license": "MIT",
   "engines": {
     "vscode": "^1.95.0"
@@ -81,7 +83,7 @@
     "compile": "tsc --noEmit && node esbuild.mjs",
     "watch": "node esbuild.mjs --watch",
     "vscode:prepublish": "npm run compile",
-    "package": "vsce package --no-dependencies --allow-missing-repository --out persistent-markdown-preview-1.5.2.vsix",
+    "package": "vsce package --no-dependencies",
     "test": "npm run compile && node --test test/*.test.cjs",
     "test:host": "npm run compile && node test/run-host.cjs"
   },
