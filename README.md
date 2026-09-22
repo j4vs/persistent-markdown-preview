@@ -6,6 +6,8 @@ Persistent Markdown Preview es una extensión de Visual Studio Code para abrir v
 
 Desarrollada por [Smartsys](https://smartsys.mx/).
 
+Este proyecto fue desarrollado con ayuda de inteligencia artificial, utilizando Codex para la implementación y las mejoras de la extensión, bajo la dirección de Smartsys.
+
 [Marketplace](https://marketplace.visualstudio.com/items?itemName=smartsys-mx.persistent-markdown-preview) · [Reportar un problema](https://github.com/j4vs/persistent-markdown-preview/issues) · [Historial de cambios](https://github.com/j4vs/persistent-markdown-preview/blob/main/CHANGELOG.md)
 
 ## Características

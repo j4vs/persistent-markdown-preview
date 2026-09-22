@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.5.5
+
+- Document the project's AI-assisted development with Codex in the public README.
+
+## 1.5.4
+
+- Add a custom Markdown and preview icon for the extension and Marketplace listing.
+
 ## 1.5.3
 
 - Rewrite the README for public users and move development instructions to CONTRIBUTING.md.
